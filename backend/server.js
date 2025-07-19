@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { MongoClient } from 'mongodb';
 import bodyParser from 'body-parser';
+import 'dotenv/config';
 
 const app = express();
 

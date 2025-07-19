@@ -1,5 +1,5 @@
 export async function saveMeeting(meetingData: any) {
-  const response = await fetch('http://localhost:4000/api/meetings', {
+  const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/meetings`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -13,7 +13,7 @@ export async function saveMeeting(meetingData: any) {
 }
 
 export async function getFeedbackData() {
-  const response = await fetch('http://localhost:4000/api/feedback');
+  const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/feedback`);
   if (!response.ok) {
     throw new Error('Failed to fetch feedback data');
   }
@@ -24,7 +24,7 @@ export async function getMeetingData(meetingId: string | undefined) {
   if (!meetingId) {
     throw new Error('Meeting ID is required');
   }
-  const response = await fetch(`http://localhost:4000/api/meetings/${encodeURIComponent(meetingId)}`);
+  const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/meetings/${encodeURIComponent(meetingId)}`);
   if (!response.ok) {
     throw new Error('Failed to fetch meeting data');
   }
@@ -32,7 +32,7 @@ export async function getMeetingData(meetingId: string | undefined) {
 }
 
 export async function saveFeedback(feedbackData: any) {
-  const response = await fetch('http://localhost:4000/api/feedback', {
+  const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/feedback`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

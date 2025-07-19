@@ -24,7 +24,7 @@ export default function Calendar() {
   React.useEffect(() => {
     const fetchMeetings = async () => {
       try {
-        const res = await fetch('http://localhost:4000/api/meetings');
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/meetings`);
         const allMeetings = await res.json();
         setMeetings(allMeetings);
       } catch (e) {

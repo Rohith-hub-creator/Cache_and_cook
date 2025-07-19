@@ -60,7 +60,7 @@ export default function Analytics() {
   // Fetch feedback from backend
   useEffect(() => {
     setLoading(true);
-    fetch('http://localhost:4000/api/feedback')
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/feedback`)
       .then(res => res.ok ? res.json() : [])
       .then(data => {
         console.log('Fetched feedback:', data);

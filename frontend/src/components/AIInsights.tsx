@@ -34,7 +34,7 @@ export default function AIInsights() {
 
   useEffect(() => {
     // Fetch all feedback for stats
-    fetch('http://localhost:4000/api/feedback')
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/feedback`)
       .then(res => res.ok ? res.json() : [])
       .then(data => setAllFeedback(Array.isArray(data) ? data : []))
       .catch(() => setAllFeedback([]));
@@ -86,7 +86,7 @@ export default function AIInsights() {
   useEffect(() => {
     if (!user) return;
     async function fetchMeetings() {
-      const response = await fetch('http://localhost:4000/api/meetings');
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/meetings`);
       const meetings = response.ok ? await response.json() : [];
       if (!user) return; // Type guard for TypeScript
       const userMeetings = meetings.filter((m: any) => m.userId === user.id);
@@ -112,7 +112,7 @@ export default function AIInsights() {
     setLoading(true);
     try {
       // Fetch feedback data from backend API
-      const response = await fetch('http://localhost:4000/api/feedback');
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/feedback`);
       const feedbackData = response.ok ? await response.json() : [];
       // Include all feedback for the selected meeting, regardless of user
       const meetingFeedback = feedbackData.filter((fb: any) => String(fb.meetingId) === selectedMeetingId);

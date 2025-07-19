@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { PublicClientApplication, AuthenticationResult } from '@azure/msal-browser';
 
 interface User {
   id: string;
@@ -11,7 +10,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  loginWithMicrosoft: () => Promise<boolean>;
+  loginWithGoogle: (credentialResponse: any) => Promise<boolean>;
   fetchUserProfile: (email: string) => Promise<any>;
   updateUserProfile: (profile: any) => Promise<any>;
   logout: () => void;
@@ -19,14 +18,6 @@ interface AuthContextType {
   profileComplete: boolean;
 }
 
-const msalConfig = {
-  auth: {
-    clientId: '28a1b27d-32d6-467d-9635-accf432bd78f',
-    redirectUri: 'http://localhost:5173',
-  },
-};
-
-const msalInstance = new PublicClientApplication(msalConfig);
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -67,21 +58,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeUser();
   }, []);
 
-  useEffect(() => {
-    // Initialize MSAL instance on component mount
-    const initializeMsal = async () => {
-      try {
-        await msalInstance.initialize();
-      } catch (error) {
-        console.error('MSAL initialization failed:', error);
-      }
-    };
-    initializeMsal();
-  }, []);
+
 
   const fetchUserProfile = async (email: string) => {
     try {
-      const response = await fetch(`http://localhost:4000/api/profile/${encodeURIComponent(email)}`);
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/profile/${encodeURIComponent(email)}`);
       if (!response.ok) {
         return null;
       }
@@ -95,7 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateUserProfile = async (profile: any) => {
     try {
-      const response = await fetch('http://localhost:4000/api/profile', {
+      console.log('[updateUserProfile] Sending profile to backend:', profile);
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profile)
@@ -104,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Try to parse error message from server
         const errorData = await response.json().catch(() => null);
         const errorMessage = errorData?.message || 'Failed to update profile';
+        console.error('[updateUserProfile] Backend error:', errorData);
         throw new Error(errorMessage);
       }
       const result = await response.json();
@@ -123,47 +106,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
-  const loginWithMicrosoft = async (): Promise<boolean> => {
+  // Google OAuth login handler
+  const loginWithGoogle = async (credentialResponse: any): Promise<boolean> => {
     try {
       setLoading(true);
-      console.log('[Auth] Starting Microsoft login...');
-      const loginResponse: AuthenticationResult = await msalInstance.loginPopup({
-        scopes: ['user.read'],
-      });
-      console.log('[Auth] loginPopup response:', loginResponse);
-      const account = loginResponse.account;
-      if (account) {
-        const userData = {
-          id: account.homeAccountId,
-          email: account.username,
-          name: account.name || account.username.split('@')[0],
-          role: 'user',
-          avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${account.username}`
-        };
-        console.log('[Auth] Account found, userData:', userData);
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
-
-        // Always fetch profile from backend after login
-        let profile = await fetchUserProfile(userData.email);
-        console.log('[Auth] Fetched profile from backend:', profile);
-        if (!profile) {
-          // If not found, create it
-          console.log('[Auth] No profile found, creating new profile in backend...');
-          await updateUserProfile(userData);
-          profile = userData;
-        }
-        const isComplete = checkProfileComplete();
-        console.log('[Auth] Profile complete:', isComplete);
-        setProfileComplete(isComplete);
-        // Always return true so login never blocks
-        return true;
-      } else {
-        console.warn('[Auth] No account returned from loginPopup.');
+      // Parse Google credential
+      const { credential } = credentialResponse;
+      if (!credential) return false;
+      // Decode JWT to get user info (for demo, in production verify on backend)
+      const base64Url = credential.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      const googleUser = JSON.parse(jsonPayload);
+      const userData = {
+        id: googleUser.sub,
+        email: googleUser.email,
+        name: googleUser.name,
+        role: 'user',
+        avatar: googleUser.picture || `https://api.dicebear.com/7.x/initials/svg?seed=${googleUser.email}`
+      };
+      console.log('[loginWithGoogle] Decoded Google user:', googleUser);
+      console.log('[loginWithGoogle] userData to send:', userData);
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+      // Always fetch profile from backend after login
+      let profile = await fetchUserProfile(userData.email);
+      if (!profile) {
+        await updateUserProfile(userData);
+        profile = userData;
       }
-      return false;
+      const isComplete = checkProfileComplete();
+      setProfileComplete(isComplete);
+      return true;
     } catch (error) {
-      console.error('[Auth] Microsoft login failed:', error);
+      console.error('[Auth] Google login failed:', error);
       return false;
     } finally {
       setLoading(false);
@@ -178,7 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = {
     user,
-    loginWithMicrosoft,
+    loginWithGoogle,
     logout,
     loading,
     profileComplete,

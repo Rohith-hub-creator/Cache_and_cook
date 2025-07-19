@@ -9,8 +9,8 @@ export function useDashboardStats(user: any) {
     if (!user) return;
     setLoading(true);
     Promise.all([
-      fetch('http://localhost:4000/api/meetings').then(r => r.ok ? r.json() : []),
-      fetch('http://localhost:4000/api/feedback').then(r => r.ok ? r.json() : [])
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/meetings`).then(r => r.ok ? r.json() : []),
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/feedback`).then(r => r.ok ? r.json() : [])
     ]).then(([meetingsData, feedbackData]) => {
       setMeetings(Array.isArray(meetingsData) ? meetingsData.filter((m: any) => m.userId === user.id) : []);
       setFeedback(Array.isArray(feedbackData) ? feedbackData : []);

@@ -59,7 +59,7 @@ export default function Dashboard() {
     const fetchMeetings = async () => {
       if (!user) return;
       try {
-        const res = await fetch('http://localhost:4000/api/meetings');
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/meetings`);
         const allMeetings = await res.json();
         const now = new Date();
         // Meeting is finished if end time is in the past, or status is 'completed'

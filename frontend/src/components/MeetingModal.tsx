@@ -87,7 +87,7 @@ export default function MeetingModal({ selectedDate, onClose }: MeetingModalProp
         meetingId,
         feedbackQuestions: questions // Store full question objects
       };
-      const response = await fetch('http://localhost:4000/api/meetings', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/meetings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(meetingData)
